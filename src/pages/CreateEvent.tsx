@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Heart, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { eventSchema } from "@/lib/validations";
 
 const CreateEvent = () => {
   const navigate = useNavigate();
@@ -54,15 +55,31 @@ const CreateEvent = () => {
 
       const slug = formData.slug || formData.title.toLowerCase().replace(/\s+/g, '-');
 
+      // Validate inputs
+      const validation = eventSchema.safeParse({
+        title: formData.title,
+        slug,
+        description: formData.description,
+        location: formData.location,
+        capacity: formData.capacity,
+        dateTime: formData.dateTime
+      });
+
+      if (!validation.success) {
+        const firstError = validation.error.errors[0];
+        toast.error(firstError.message);
+        return;
+      }
+
       const { error } = await supabase
         .from('events')
         .insert({
-          title: formData.title,
-          slug,
-          description: formData.description,
-          date_time: formData.dateTime,
-          location: formData.location,
-          capacity: formData.capacity,
+          title: validation.data.title,
+          slug: validation.data.slug,
+          description: validation.data.description,
+          date_time: validation.data.dateTime,
+          location: validation.data.location,
+          capacity: validation.data.capacity,
           created_by: user.id,
         });
 

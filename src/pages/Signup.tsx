@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Heart, Users, DollarSign, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { signupSchema } from "@/lib/validations";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -23,14 +24,28 @@ const Signup = () => {
       return;
     }
 
+    // Validate inputs
+    const validation = signupSchema.safeParse({
+      name,
+      email,
+      password,
+      role: selectedRole
+    });
+
+    if (!validation.success) {
+      const firstError = validation.error.errors[0];
+      toast.error(firstError.message);
+      return;
+    }
+
     setLoading(true);
     try {
       // Sign up user
       const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
+        email: validation.data.email,
+        password: validation.data.password,
         options: {
-          data: { name },
+          data: { name: validation.data.name },
           emailRedirectTo: `${window.location.origin}/`,
         },
       });
@@ -38,15 +53,18 @@ const Signup = () => {
       if (error) throw error;
 
       if (data.user) {
-        // Insert user role
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert({ user_id: data.user.id, role: selectedRole });
+        // Call Edge Function to assign role securely
+        const { data: roleData, error: roleError } = await supabase.functions.invoke('assign-user-role', {
+          body: { 
+            userId: data.user.id, 
+            requestedRole: validation.data.role 
+          }
+        });
 
         if (roleError) throw roleError;
 
         toast.success("Account created successfully!");
-        navigate(`/dashboard-${selectedRole}`);
+        navigate(`/dashboard-${roleData.role}`);
       }
     } catch (error: any) {
       toast.error(error.message || "Signup failed");
@@ -95,16 +113,13 @@ const Signup = () => {
               </p>
             </Card>
 
-            <Card 
-              className="p-8 cursor-pointer hover:shadow-lg transition-all border-2 hover:border-secondary group"
-              onClick={() => setSelectedRole('ngo')}
-            >
-              <div className="h-16 w-16 rounded-full bg-secondary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform mx-auto">
+            <Card className="p-8 border-2 border-muted cursor-not-allowed opacity-60">
+              <div className="h-16 w-16 rounded-full bg-secondary/10 flex items-center justify-center mb-4 mx-auto">
                 <Building2 className="h-8 w-8 text-secondary" />
               </div>
               <h3 className="text-xl font-semibold text-center mb-2">NGO</h3>
               <p className="text-sm text-muted-foreground text-center">
-                Create events and manage volunteer activities
+                Requires verification - Contact support
               </p>
             </Card>
           </div>

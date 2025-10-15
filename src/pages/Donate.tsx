@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Heart, ArrowLeft, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { donationSchema } from "@/lib/validations";
 
 const Donate = () => {
   const navigate = useNavigate();
@@ -48,8 +49,17 @@ const Donate = () => {
       if (!user) throw new Error("Not authenticated");
 
       const donationAmount = parseFloat(amount);
-      if (isNaN(donationAmount) || donationAmount <= 0) {
-        throw new Error("Please enter a valid amount");
+
+      // Validate inputs
+      const validation = donationSchema.safeParse({
+        amount: donationAmount,
+        campaign
+      });
+
+      if (!validation.success) {
+        const firstError = validation.error.errors[0];
+        toast.error(firstError.message);
+        return;
       }
 
       // Create donation record
@@ -57,8 +67,8 @@ const Donate = () => {
         .from('donations')
         .insert({
           donor_id: user.id,
-          amount: donationAmount,
-          campaign,
+          amount: validation.data.amount,
+          campaign: validation.data.campaign,
           status: 'completed',
         });
 

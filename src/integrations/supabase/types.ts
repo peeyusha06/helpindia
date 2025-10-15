@@ -139,7 +139,33 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_profiles: {
+        Row: {
+          avatar_url: string | null
+          badges: string[] | null
+          events_joined: number | null
+          hours_volunteered: number | null
+          id: string | null
+          name: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          badges?: string[] | null
+          events_joined?: number | null
+          hours_volunteered?: number | null
+          id?: string | null
+          name?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          badges?: string[] | null
+          events_joined?: number | null
+          hours_volunteered?: number | null
+          id?: string | null
+          name?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {

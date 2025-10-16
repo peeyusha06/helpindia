@@ -113,13 +113,16 @@ const Signup = () => {
               </p>
             </Card>
 
-            <Card className="p-8 border-2 border-muted cursor-not-allowed opacity-60">
-              <div className="h-16 w-16 rounded-full bg-secondary/10 flex items-center justify-center mb-4 mx-auto">
+            <Card 
+              className="p-8 cursor-pointer hover:shadow-lg transition-all border-2 hover:border-secondary group"
+              onClick={() => setSelectedRole('ngo')}
+            >
+              <div className="h-16 w-16 rounded-full bg-secondary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform mx-auto">
                 <Building2 className="h-8 w-8 text-secondary" />
               </div>
               <h3 className="text-xl font-semibold text-center mb-2">NGO</h3>
               <p className="text-sm text-muted-foreground text-center">
-                Requires verification - Contact support
+                Create and manage volunteer events
               </p>
             </Card>
           </div>

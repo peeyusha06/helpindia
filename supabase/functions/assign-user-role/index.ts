@@ -35,9 +35,8 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Only allow 'volunteer' and 'donor' roles via signup
-    // NGO role requires manual approval/verification
-    const allowedRoles = ['volunteer', 'donor']
+    // Allow all roles via signup for development/testing
+    const allowedRoles = ['volunteer', 'donor', 'ngo']
     const finalRole = allowedRoles.includes(requestedRole) ? requestedRole : 'volunteer'
 
     console.log('Assigning role:', { userId, finalRole })

@@ -5,6 +5,14 @@ import { Card } from "@/components/ui/card";
 import { Heart, Plus, Users, Calendar, TrendingUp, LogOut, Edit, Trash } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { NotificationBell } from "@/components/NotificationBell";
+import { VolunteersList } from "@/components/VolunteersList";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Event {
   id: string;
@@ -22,6 +30,8 @@ const DashboardNGO = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [donations, setDonations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [showVolunteersDialog, setShowVolunteersDialog] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -120,9 +130,12 @@ const DashboardNGO = () => {
             <Heart className="h-8 w-8 text-primary" />
             <span className="text-2xl font-bold">HelpIndia</span>
           </div>
-          <Button variant="outline" onClick={handleLogout} className="gap-2">
-            <LogOut className="h-4 w-4" /> Logout
-          </Button>
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            <Button variant="outline" onClick={handleLogout} className="gap-2">
+              <LogOut className="h-4 w-4" /> Logout
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -182,9 +195,11 @@ const DashboardNGO = () => {
                   <div className="flex items-start justify-between mb-3">
                     <h3 className="text-xl font-semibold">{event.title}</h3>
                     <div className="flex gap-2">
-                      <Button size="icon" variant="ghost">
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                      <Link to={`/edit-event/${event.id}`}>
+                        <Button size="icon" variant="ghost">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </Link>
                       <Button 
                         size="icon" 
                         variant="ghost"
@@ -218,7 +233,14 @@ const DashboardNGO = () => {
                     </div>
                   </div>
 
-                  <Button variant="outline" className="w-full">
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      setSelectedEvent(event);
+                      setShowVolunteersDialog(true);
+                    }}
+                  >
                     View Volunteers
                   </Button>
                 </Card>
@@ -256,6 +278,20 @@ const DashboardNGO = () => {
           )}
         </div>
       </div>
+
+      {/* Volunteers Dialog */}
+      <Dialog open={showVolunteersDialog} onOpenChange={setShowVolunteersDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              Registered Volunteers - {selectedEvent?.title}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedEvent && (
+            <VolunteersList volunteerIds={selectedEvent.volunteers_registered || []} />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

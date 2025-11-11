@@ -6,6 +6,10 @@ import { Progress } from "@/components/ui/progress";
 import { Heart, Calendar, Clock, MapPin, Users, Award, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { NotificationBell } from "@/components/NotificationBell";
+import { Leaderboard } from "@/components/Leaderboard";
+import { HoursLogger } from "@/components/HoursLogger";
+import { EventSearch, SearchFilters } from "@/components/EventSearch";
 
 interface Event {
   id: string;
@@ -15,12 +19,14 @@ interface Event {
   location: string;
   capacity: number;
   volunteers_registered: string[];
+  image_url: string | null;
 }
 
 const DashboardVolunteer = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
   const [events, setEvents] = useState<Event[]>([]);
+  const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -66,11 +72,48 @@ const DashboardVolunteer = () => {
         .order('date_time', { ascending: true });
 
       setEvents(eventsData || []);
+      setFilteredEvents(eventsData || []);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearch = (query: string, filters: SearchFilters) => {
+    let filtered = [...events];
+
+    // Text search
+    if (query) {
+      filtered = filtered.filter(event =>
+        event.title.toLowerCase().includes(query.toLowerCase()) ||
+        event.location.toLowerCase().includes(query.toLowerCase())
+      );
+    }
+
+    // Date filter
+    const now = new Date();
+    if (filters.dateFilter === 'week') {
+      const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      filtered = filtered.filter(event => new Date(event.date_time) <= weekFromNow);
+    } else if (filters.dateFilter === 'month') {
+      const monthFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      filtered = filtered.filter(event => new Date(event.date_time) <= monthFromNow);
+    }
+
+    // Sort
+    filtered.sort((a, b) => {
+      if (filters.sortBy === 'date') {
+        return new Date(a.date_time).getTime() - new Date(b.date_time).getTime();
+      } else if (filters.sortBy === 'capacity') {
+        return b.capacity - a.capacity;
+      } else if (filters.sortBy === 'volunteers') {
+        return (b.volunteers_registered?.length || 0) - (a.volunteers_registered?.length || 0);
+      }
+      return 0;
+    });
+
+    setFilteredEvents(filtered);
   };
 
   const handleRegister = async (eventId: string) => {
@@ -125,9 +168,12 @@ const DashboardVolunteer = () => {
             <Heart className="h-8 w-8 text-primary" />
             <span className="text-2xl font-bold">HelpIndia</span>
           </div>
-          <Button variant="outline" onClick={handleLogout} className="gap-2">
-            <LogOut className="h-4 w-4" /> Logout
-          </Button>
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            <Button variant="outline" onClick={handleLogout} className="gap-2">
+              <LogOut className="h-4 w-4" /> Logout
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -180,16 +226,34 @@ const DashboardVolunteer = () => {
           </Card>
         </div>
 
+        {/* Leaderboard */}
+        <div className="mb-8">
+          <Leaderboard />
+        </div>
+
         {/* Find Opportunities Section */}
         <div>
           <h2 className="text-2xl font-bold mb-4">Find Opportunities</h2>
+          <div className="mb-6">
+            <EventSearch onSearch={handleSearch} />
+          </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {events.map((event) => {
+            {filteredEvents.map((event) => {
               const isRegistered = profile && event.volunteers_registered?.includes(profile.id);
               
               return (
-                <Card key={event.id} className="p-6 hover:shadow-lg transition-all">
-                  <h3 className="text-xl font-semibold mb-3">{event.title}</h3>
+                <Card key={event.id} className="overflow-hidden hover:shadow-lg transition-all">
+                  {event.image_url && (
+                    <div className="h-48 overflow-hidden">
+                      <img
+                        src={event.image_url}
+                        alt={event.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <div className="p-6">
+                    <h3 className="text-xl font-semibold mb-3">{event.title}</h3>
                   <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
                     {event.description}
                   </p>
@@ -209,14 +273,24 @@ const DashboardVolunteer = () => {
                     </div>
                   </div>
 
-                  <Button 
-                    onClick={() => handleRegister(event.id)}
-                    disabled={isRegistered}
-                    className="w-full"
-                    variant={isRegistered ? "outline" : "default"}
-                  >
-                    {isRegistered ? "Registered ✓" : "Register"}
-                  </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={() => handleRegister(event.id)}
+                        disabled={isRegistered}
+                        className="flex-1"
+                        variant={isRegistered ? "outline" : "default"}
+                      >
+                        {isRegistered ? "Registered ✓" : "Register"}
+                      </Button>
+                      {isRegistered && (
+                        <HoursLogger
+                          eventId={event.id}
+                          eventTitle={event.title}
+                          onHoursLogged={fetchData}
+                        />
+                      )}
+                    </div>
+                  </div>
                 </Card>
               );
             })}

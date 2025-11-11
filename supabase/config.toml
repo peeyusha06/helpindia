@@ -1,1 +1,7 @@
 project_id = "syeyakylfkakiqpmlcro"
+
+[functions.assign-user-role]
+verify_jwt = false
+
+[functions.send-notification-email]
+verify_jwt = false

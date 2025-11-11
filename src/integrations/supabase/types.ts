@@ -52,6 +52,7 @@ export type Database = {
           date_time: string
           description: string | null
           id: string
+          image_url: string | null
           location: string
           slug: string
           status: string | null
@@ -65,6 +66,7 @@ export type Database = {
           date_time: string
           description?: string | null
           id?: string
+          image_url?: string | null
           location: string
           slug: string
           status?: string | null
@@ -78,6 +80,7 @@ export type Database = {
           date_time?: string
           description?: string | null
           id?: string
+          image_url?: string | null
           location?: string
           slug?: string
           status?: string | null
@@ -85,6 +88,47 @@ export type Database = {
           volunteers_registered?: string[] | null
         }
         Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          read: boolean
+          related_event_id: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          read?: boolean
+          related_event_id?: string | null
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          read?: boolean
+          related_event_id?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_related_event_id_fkey"
+            columns: ["related_event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -137,6 +181,44 @@ export type Database = {
         }
         Relationships: []
       }
+      volunteer_hours: {
+        Row: {
+          created_at: string
+          date: string
+          event_id: string
+          hours: number
+          id: string
+          notes: string | null
+          volunteer_id: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          event_id: string
+          hours: number
+          id?: string
+          notes?: string | null
+          volunteer_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          event_id?: string
+          hours?: number
+          id?: string
+          notes?: string | null
+          volunteer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "volunteer_hours_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       public_profiles: {
@@ -163,6 +245,17 @@ export type Database = {
           hours_volunteered?: number | null
           id?: string | null
           name?: string | null
+        }
+        Relationships: []
+      }
+      volunteer_leaderboard: {
+        Row: {
+          avatar_url: string | null
+          badges: string[] | null
+          events_joined: number | null
+          hours_volunteered: number | null
+          id: string | null
+          name: string | null
         }
         Relationships: []
       }

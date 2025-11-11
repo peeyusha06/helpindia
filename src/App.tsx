@@ -10,6 +10,7 @@ import DashboardVolunteer from "./pages/DashboardVolunteer";
 import DashboardDonor from "./pages/DashboardDonor";
 import DashboardNGO from "./pages/DashboardNGO";
 import CreateEvent from "./pages/CreateEvent";
+import EditEvent from "./pages/EditEvent";
 import Donate from "./pages/Donate";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/dashboard-donor" element={<DashboardDonor />} />
           <Route path="/dashboard-ngo" element={<DashboardNGO />} />
           <Route path="/create-event" element={<CreateEvent />} />
+          <Route path="/edit-event/:id" element={<EditEvent />} />
           <Route path="/donate" element={<Donate />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />

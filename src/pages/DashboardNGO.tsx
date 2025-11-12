@@ -36,12 +36,8 @@ const DashboardNGO = () => {
   useEffect(() => {
     checkAuth();
     fetchData();
-  }, []);
 
-  useEffect(() => {
-    if (!profile?.id) return;
-
-    // Real-time subscription for volunteer registrations and donations
+    // Real-time subscription for volunteer registrations
     const channel = supabase
       .channel('ngo-updates')
       .on(
@@ -51,25 +47,15 @@ const DashboardNGO = () => {
       )
       .on(
         'postgres_changes',
-        { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'donations',
-          filter: `ngo_id=eq.${profile.id}`
-        },
-        (payload) => {
-          fetchData();
-          toast.success(`New donation of ₹${payload.new.amount} received!`, {
-            description: `Campaign: ${payload.new.campaign}`
-          });
-        }
+        { event: 'INSERT', schema: 'public', table: 'donations' },
+        () => fetchData()
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profile?.id]);
+  }, []);
 
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -122,7 +108,6 @@ const DashboardNGO = () => {
       const { data: donationsData } = await supabase
         .from('donations')
         .select('*')
-        .eq('ngo_id', user.id)
         .order('date', { ascending: false })
         .limit(10);
 

@@ -142,7 +142,7 @@ const DashboardDonor = () => {
               <span>Progress to ₹{goalAmount.toLocaleString()} goal</span>
               <span className="font-semibold">{progressPercent.toFixed(1)}%</span>
             </div>
-            <Progress value={progressPercent} className="h-3" />
+            <Progress value={progressPercent} showPercentage className="h-3" />
           </div>
 
           <Link to="/donate">

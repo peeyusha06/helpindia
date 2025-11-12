@@ -15,11 +15,38 @@ const Donate = () => {
   const [success, setSuccess] = useState(false);
   const [amount, setAmount] = useState("");
   const [campaign, setCampaign] = useState("General Fund");
+  const [selectedNgo, setSelectedNgo] = useState("");
+  const [ngos, setNgos] = useState<any[]>([]);
   const presetAmounts = [500, 1000, 2500, 5000];
 
   useEffect(() => {
     checkAuth();
+    fetchNgos();
   }, []);
+
+  const fetchNgos = async () => {
+    try {
+      const { data: ngoRoles } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'ngo');
+
+      if (ngoRoles && ngoRoles.length > 0) {
+        const ngoIds = ngoRoles.map(r => r.user_id);
+        const { data: ngoProfiles } = await supabase
+          .from('profiles')
+          .select('id, name')
+          .in('id', ngoIds);
+
+        setNgos(ngoProfiles || []);
+        if (ngoProfiles && ngoProfiles.length > 0) {
+          setSelectedNgo(ngoProfiles[0].id);
+        }
+      }
+    } catch (error: any) {
+      console.error('Error fetching NGOs:', error);
+    }
+  };
 
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -62,20 +89,24 @@ const Donate = () => {
         return;
       }
 
-      // Create donation record
-      const { error } = await supabase
-        .from('donations')
-        .insert({
-          donor_id: user.id,
-          amount: validation.data.amount,
-          campaign: validation.data.campaign,
-          status: 'completed',
-        });
+      if (!selectedNgo) {
+        toast.error("Please select an NGO to donate to");
+        return;
+      }
+
+      // Use RPC function to create donation and notifications atomically
+      const { data, error } = await supabase.rpc('create_donation_and_notify', {
+        p_donor_id: user.id,
+        p_ngo_id: selectedNgo,
+        p_amount: validation.data.amount,
+        p_campaign: validation.data.campaign
+      });
 
       if (error) throw error;
 
       setSuccess(true);
-      toast.success("Donation successful! Thank you for your support!");
+      const ngoName = ngos.find(n => n.id === selectedNgo)?.name || "the organization";
+      toast.success(`Thank you! Your donation of ₹${amount} to ${ngoName} has been received.`);
       
       // Reset after 3 seconds
       setTimeout(() => {
@@ -158,6 +189,24 @@ const Donate = () => {
                 required
                 className="text-lg"
               />
+            </div>
+
+            <div>
+              <Label htmlFor="ngo">Select NGO</Label>
+              <select
+                id="ngo"
+                value={selectedNgo}
+                onChange={(e) => setSelectedNgo(e.target.value)}
+                className="w-full h-10 px-3 rounded-md border border-input bg-background"
+                required
+              >
+                {ngos.length === 0 && <option value="">No NGOs available</option>}
+                {ngos.map((ngo) => (
+                  <option key={ngo.id} value={ngo.id}>
+                    {ngo.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>

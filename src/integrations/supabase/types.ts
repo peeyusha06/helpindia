@@ -22,6 +22,7 @@ export type Database = {
           date: string | null
           donor_id: string
           id: string
+          ngo_id: string | null
           status: string | null
         }
         Insert: {
@@ -31,6 +32,7 @@ export type Database = {
           date?: string | null
           donor_id: string
           id?: string
+          ngo_id?: string | null
           status?: string | null
         }
         Update: {
@@ -40,6 +42,7 @@ export type Database = {
           date?: string | null
           donor_id?: string
           id?: string
+          ngo_id?: string | null
           status?: string | null
         }
         Relationships: []
@@ -296,6 +299,16 @@ export type Database = {
       }
     }
     Functions: {
+      create_donation_and_notify: {
+        Args: {
+          p_amount: number
+          p_campaign: string
+          p_donor_id: string
+          p_event_id?: string
+          p_ngo_id: string
+        }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

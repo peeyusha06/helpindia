@@ -21,7 +21,7 @@ interface Event {
   date_time: string;
   location: string;
   capacity: number;
-  volunteers_registered: string[];
+  volunteer_count?: number;
 }
 
 const DashboardNGO = () => {
@@ -36,6 +36,25 @@ const DashboardNGO = () => {
   useEffect(() => {
     checkAuth();
     fetchData();
+
+    // Real-time subscription for volunteer registrations
+    const channel = supabase
+      .channel('ngo-updates')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'volunteer_registrations' },
+        () => fetchData()
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'donations' },
+        () => fetchData()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const checkAuth = async () => {
@@ -71,11 +90,20 @@ const DashboardNGO = () => {
 
       const { data: eventsData } = await supabase
         .from('events')
-        .select('*')
+        .select(`
+          *,
+          volunteer_count:volunteer_registrations(count)
+        `)
         .eq('created_by', user.id)
         .order('date_time', { ascending: false });
 
-      setEvents(eventsData || []);
+      // Transform the data to get volunteer count
+      const eventsWithCounts = eventsData?.map(event => ({
+        ...event,
+        volunteer_count: event.volunteer_count?.[0]?.count || 0
+      })) || [];
+
+      setEvents(eventsWithCounts);
 
       const { data: donationsData } = await supabase
         .from('donations')
@@ -118,7 +146,7 @@ const DashboardNGO = () => {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
-  const totalVolunteers = events.reduce((sum, e) => sum + (e.volunteers_registered?.length || 0), 0);
+  const totalVolunteers = events.reduce((sum, e) => sum + (e.volunteer_count || 0), 0);
   const totalDonations = donations.reduce((sum, d) => sum + Number(d.amount), 0);
 
   return (
@@ -228,7 +256,7 @@ const DashboardNGO = () => {
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Volunteers</span>
                       <span className="font-medium">
-                        {event.volunteers_registered?.length || 0}/{event.capacity}
+                        {event.volunteer_count || 0}/{event.capacity}
                       </span>
                     </div>
                   </div>
@@ -288,7 +316,7 @@ const DashboardNGO = () => {
             </DialogTitle>
           </DialogHeader>
           {selectedEvent && (
-            <VolunteersList volunteerIds={selectedEvent.volunteers_registered || []} />
+            <VolunteersList eventId={selectedEvent.id} />
           )}
         </DialogContent>
       </Dialog>

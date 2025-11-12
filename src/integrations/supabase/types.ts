@@ -219,6 +219,41 @@ export type Database = {
           },
         ]
       }
+      volunteer_registrations: {
+        Row: {
+          event_id: string
+          hours_contributed: number | null
+          id: string
+          registered_at: string
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          event_id: string
+          hours_contributed?: number | null
+          id?: string
+          registered_at?: string
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          event_id?: string
+          hours_contributed?: number | null
+          id?: string
+          registered_at?: string
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "volunteer_registrations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       public_profiles: {

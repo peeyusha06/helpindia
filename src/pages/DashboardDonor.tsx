@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Heart, TrendingUp, DollarSign, Calendar, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { NotificationBell } from "@/components/NotificationBell";
 
 interface Donation {
   id: string;
@@ -25,7 +26,21 @@ const DashboardDonor = () => {
   useEffect(() => {
     checkAuth();
     fetchData();
-  }, []);
+
+    // Real-time subscription for donations
+    const channel = supabase
+      .channel('donor-donations')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'donations', filter: `donor_id=eq.${profile?.id}` },
+        () => fetchData()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.id]);
 
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -96,9 +111,12 @@ const DashboardDonor = () => {
             <Heart className="h-8 w-8 text-primary" />
             <span className="text-2xl font-bold">HelpIndia</span>
           </div>
-          <Button variant="outline" onClick={handleLogout} className="gap-2">
-            <LogOut className="h-4 w-4" /> Logout
-          </Button>
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            <Button variant="outline" onClick={handleLogout} className="gap-2">
+              <LogOut className="h-4 w-4" /> Logout
+            </Button>
+          </div>
         </div>
       </header>
 
